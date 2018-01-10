@@ -1,4 +1,4 @@
-#pragma config(Sensor, S1,     sonic,          sensorSONAR)
+#pragma config(Sensor, S1,     sonar,          sensorSONAR)
 #pragma config(Sensor, S2,     lightRear,      sensorLightActive)
 #pragma config(Sensor, S3,     lightLeft,      sensorLightActive)
 #pragma config(Sensor, S4,     lightRight,     sensorLightActive)
@@ -10,20 +10,28 @@ int lightValNow;
 int lightValPrev = 0;
 int trippedLight = -1; // 1 = lightLeft, 2 = lightRight, 3 = lightRear
 
-int lightsClear(int lightValPrev){
-	if(lightValPrev = 0){
-		lightValPrev = (SensorValue(lightRight) + SensorValue(lightLeft) + SensorValue(lightRear));
+int lightsClear(){
+	if(lightValPrev == 0){
+		lightValPrev = (SensorValue(lightRight) + SensorValue(lightLeft) + SensorValue(lightRear)) / 3;
 	}
-	lightValNow = (SensorValue(lightRight) + SensorValue(lightLeft) + SensorValue(lightRear));
-	
-	if((lightValNow < lightValPrev - 10) || (lightValNow > lightValPrev + 10)){
-		
+	lightValNow = (SensorValue(lightRight) + SensorValue(lightLeft) + SensorValue(lightRear)) / 3;
+	int threshPos = lightValPrev + 10;
+	int threshNeg = lightValPrev - 10;
+
+	if((lightValNow < threshNeg) || (lightValNow > threshPos)){
+		if(SensorValue(lightLeft) < threshNeg || SensorValue(lightLeft) > threshPos){
+			trippedLight = 1; //light Left tripped, this val sent to lightsTripped()
+		}else if(SensorValue(lightRight) < threshNeg || SensorValue(lightRight) > threshPos){
+			trippedLight = 2; //light Right tripped, this val sent to lightsTripped()
+		} else if(SensorValue(lightRear) < threshNeg || SensorValue(lightRear) > threshPos){
+			trippedLight = 3; //light left tripped, this val sent to lightsTripped()
+		}
 		return 0;
 	}else return 1;
-
 }
 
-void lightTripped(int trippedLight){
+void lightTripped(){
+	/*
 	// light sensor has been tripped
 	if(SensorValue(lightLeft) > threshold){
 		// reverse robot to the right
@@ -49,28 +57,164 @@ void lightTripped(int trippedLight){
 		wait1Msec(1000);
 		break;
 	
+		}
+	}
+	*/
+}
+
+void forwardInch(){
+	nMotorEncoder[motorB] = 0;
+	nSyncedMotors = synchBC;
+	nSyncedTurnRatio = 100;
+	while(nMotorEncoder[motorB] < 360 && lightsClear()) {
+	
+		/*
+		if (SensorValue(sonar) < 20) {
+			target_acquired = true;
+			break;
+		}
+		*/
+		
+		motor[motorB] = 100;
+		
+	}
+	motor[motorB] = 0;
+}
+
+void reverseInch(){
+	nMotorEncoder[motorB] = 0;
+	nSyncedMotors = synchBC;
+	nSyncedTurnRatio = 100;
+
+	while(nMotorEncoder[motorB] > -87) {
+ motorBrot = nMotorEncoder[motorB];
+		/*
+		if (SensorValue(sonar) < 20) {
+			target_acquired = true;
+			break;
+		}
+		*/
+
+		motor[motorB] = -100;
+
 	}
 
+	motor[motorB] = 0;
+}
+
+void turn90L(){//Left
+	//int direction = 0;
+	//bool target_acquired = false;
+	nMotorEncoder[motorB] = 0;
+	nSyncedMotors = synchBC;
+	nSyncedTurnRatio = -100;
+	while(nMotorEncoder[motorB] < 507.5 && lightsClear()) {
+	
+		/*
+		if (SensorValue(sonar) < 20) {
+			target_acquired = true;
+			break;
+		}
+		*/
+		
+		motor[motorB] = 100;
+		
+	}
+	motor[motorB] = 0;
+}
+
+void turn90R(){
+	//int direction = 0;
+	//bool target_acquired = false;
+	nMotorEncoder[motorC] = 0;
+	nSyncedMotors = synchCB;
+	nSyncedTurnRatio = -100;
+	while(nMotorEncoder[motorC] < 507.5 && lightsClear()) {
+	
+		/*
+		if (SensorValue(sonar) < 20) {
+			target_acquired = true;
+			break;
+		}
+		*/
+		
+		motor[motorC] = 100;
+		
+	}
+	motor[motorC] = 0;
+}
+
+void turn180R(){//Right
+	nSyncedMotors = synchCB;
+	nSyncedTurnRatio = -100;
+	nMotorEncoder[motorC] = 0;
+	while(nMotorEncoder[motorC] < 1015 && lightsClear()) {
+		motor[motorC] = 100;
+		/*
+		if (SensorValue(sonar) < 20) {
+			target_acquired = true;
+			break;
+		}
+		*/
+	}
+	motor[motorC] = 0;
+}
+
+void turn180L(){
+	nSyncedMotors = synchBC;
+	nSyncedTurnRatio = -100;
+	nMotorEncoder[motorB] = 0;
+	while(nMotorEncoder[motorB] < 1015) {
+		/*if (SensorValue(sonar) < 20) {
+			target_acquired = true;
+			break;
+		}
+		*/
+		motor[motorB] = 100;
+	}
+	motor[motorB] = 0;
 }
 
 task main()
 {
 
-	int distance1, distance2;
+	while(1){
+		
+		while(lightsClear()){
+			/*
+				switch(state){
+					case 0: turtleState(state); //find wall, put back to it
+					break;
+					case 1: scanningState(state); //with back to wall, then search for targets and attack
+					break;
+					case 2: resetState(state); //scan 360 and keep distance
+					break;
+				}
+			*/
+			forwardInch();
+		}
+		// light has been tripped
+		lightTripped();
 
+	}	
+
+}
+void turtleState(int state){
+	int distance1, distance2;
+	
 	while(lightsClear()){
 		//checking for wall, first point of data
 		motor[leftTrack] = 50;
 		motor[rightTrack] = 50;
-
-		if(SensorValue(sonic) <= 35) {
+		
+		if(SensorValue(sonar) <= 35) {
 			//when seeing wall for first time, reverse for a short bit then rotate 90, move a bit, rotate 90 back and check for wall again
 			while(lightsClear()){
-
+			
 				motor[leftTrack] = -50;
 				motor[rightTrack] = -50;
 				wait1Msec(500);
-				distance1 = SensorValue(sonic); //save distance to supposed wall
+				distance1 = SensorValue(sonar); //save distance to supposed wall
 				//spin 90 deg
 				motor[leftTrack] = 100;
 				motor[rightTrack] = -100;
@@ -83,7 +227,7 @@ task main()
 				motor[leftTrack] = -100;
 				motor[rightTrack] = 100;
 				wait1Msec(625);
-				distance2 = SensorValue(sonic); //save second distance var to check against distance1
+				distance2 = SensorValue(sonar); //save second distance var to check against distance1
 				//calculate to determine if obj is wall
 				if(distance1 - distance2 < 4 && distance1 - distance2 > -4){
 					//we are facing a wall, spin 180
@@ -96,10 +240,14 @@ task main()
 					}
 				}
 			}//end while loop
-
+			lightTripped();
 		}//end if statement
-
+		lightTripped();
+	
+		state++; //goes to scanning state
+		
 	}//end first while loop
-
-
-}
+	
+	lightTripped();
+	
+}//end turtle state
