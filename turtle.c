@@ -114,7 +114,7 @@ void customL(int degree){
 	nMotorEncoder[motorB] = 0;
 	nSyncedMotors = synchBC;
 	nSyncedTurnRatio = -100;
-	while(nMotorEncoder[motorB] < degree * 6 && lightsClear()) {
+	while(nMotorEncoder[motorB] < degree * 5.6 && lightsClear()) {
 		//for scanning physical objects while moving
 		/*
 		if (SensorValue(sonar) < 20) {
@@ -130,7 +130,7 @@ void customR(int degree){
 	nMotorEncoder[motorC] = 0;
 	nSyncedMotors = synchCB;
 	nSyncedTurnRatio = -100;
-	while(nMotorEncoder[motorC] < degree * 6 && lightsClear()) {
+	while(nMotorEncoder[motorC] < degree * 5.6 && lightsClear()) {
 		//for scanning physical objects while moving
 		/*
 		if (SensorValue(sonar) < 20) {
